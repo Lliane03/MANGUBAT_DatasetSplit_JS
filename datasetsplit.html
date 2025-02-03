@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dataset Split</title>
+    <style>
+        body {
+            font-family: Georgia, 'Times New Roman', Times, serif;
+            background-color: #00ff95;   
+        }
+
+        h1 {
+            font-size: 40px;
+            font-weight: bolder;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+
+        h1:hover {
+            color: #83002c;
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+
+        p {
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #000000;
+        }
+
+        .input-button-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px; 
+        }
+
+        .input-button-wrapper > * { 
+            margin: 0 5px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #e1ee32;
+            color: #0d0e0d;
+            border-radius: 5px; 
+            cursor: pointer;
+            transition: 0.3s ease;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+
+        button:hover {
+            background-color: #801919;
+            color: #ffffff;
+        }
+
+        input[type="file"] {
+            margin-left: 435px;
+            padding: 10px 15px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background-color: #801919;
+            color: #ffffff;
+            border-radius: 5px; 
+            transition: 0.3s ease;
+            font-family: Georgia, 'Times New Roman', Times, serif;
+        }
+
+        input:hover {
+            background-color: #e1ee32;
+            color: #0d0e0d;
+        }
+
+        #output {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 48%;
+            margin: 1%;
+            box-shadow: 2px 2px 5px rgba(255, 0, 0, 0.301); 
+        }
+
+        th, td {
+            border: 1px solid #3d3c3c;
+            padding: 15px;
+            text-align: center;
+            background-color: #dddddd9f;
+        }
+
+        caption {
+            font-weight: bold;
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #6e0040;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            color: #000d46;
+        }
+    </style>
+</head>
+<body>
+    <h1>JAVASCRIPT DATASET SPLIT</h1>
+    <p>This program is set to separate the dataset according to its Boolean value (True or False). 
+        <br>Please select your dataset (CVS file), then click the 'Split Dataset' button to show the output.    
+    </p>
+
+    <input type="file" id="fileInput" accept=".csv">
+    <button onclick="splitDatasetCSV()">Split Dataset</button>
+
+    <div id="output">
+        <div id="trueOutput"></div>
+        <div id="falseOutput"></div>
+    </div>
+
+    <script>
+        async function splitDatasetCSV() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please choose a CSV file first.");
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                const csvData = e.target.result;
+                const lines = csvData.split('\n');
+
+                if (lines.length <= 1) {
+                    alert("The selected CSV file is empty or contains only a header.");
+                    return;
+                }
+
+                const headerLine = lines[0];
+                const delimiter = headerLine.includes(",") ? "," : /\s+/;
+                const header = headerLine.split(delimiter);
+
+                const data = [];
+
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line === "") continue;
+
+                    const values = line.split(delimiter);
+                    if (values.length !== header.length) {
+                        console.warn(`Row ${i + 1} has incorrect number of values:`, line);
+                        continue;
+                    }
+
+                    const row = {};
+                    for (let j = 0; j < header.length; j++) {
+                        row[header[j]] = values[j];
+                    }
+                    data.push(row);
+                }
+
+                const trueData = [];
+                const falseData = [];
+
+                data.forEach(row => {
+                    const booleanColumnName = header[3]; // The boolean column is the fourth one
+                    const booleanValue = row[booleanColumnName];
+
+                    if (booleanValue && booleanValue.toLowerCase() === "true") {
+                        trueData.push(row);
+                    } else if (booleanValue && booleanValue.toLowerCase() === "false") {
+                        falseData.push(row);
+                    } else if (booleanValue !== undefined) {
+                        console.warn("Invalid boolean value in row:", row);
+                    }
+                });
+
+                displayData("TRUE Data", trueData, "trueOutput", header);
+                displayData("FALSE Data", falseData, "falseOutput", header);
+            };
+
+            reader.readAsText(file);
+        }
+
+        function displayData(title, data, outputDivId, header) {
+            const outputDiv = document.getElementById(outputDivId);
+            outputDiv.innerHTML = ""; // Clear previous content
+
+            const table = document.createElement('table');
+            
+            // Create table caption
+            const caption = table.createCaption();
+            caption.textContent = title;
+
+            // Create table header
+            const headerRow = table.insertRow();
+            header.forEach(headerText => {
+                const headerCell = headerRow.insertCell();
+                headerCell.textContent = headerText;
+                headerCell.style.fontWeight = 'bold';
+            });
+
+            // Populate table rows with data
+            if (data.length > 0) {
+                data.forEach(item => {
+                    const row = table.insertRow();
+                    header.forEach(headerText => { 
+                        const cell = row.insertCell();
+                        cell.textContent = item[headerText] || "N/A"; // Display N/A for missing values
+                    });
+                });
+            } else {
+                // If no data to display
+                const row = table.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = header.length;
+                cell.textContent = "No data to display.";
+                cell.style.textAlign = 'center';
+            }
+
+            outputDiv.appendChild(table);
+        }
+    </script>
+</body>
+</html>
